@@ -7,6 +7,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +27,7 @@ public class Game extends AppCompatActivity {
     Intent intent;
     String gameTopic;
     Integer [] currentGame = new Integer[12];
+    View view;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

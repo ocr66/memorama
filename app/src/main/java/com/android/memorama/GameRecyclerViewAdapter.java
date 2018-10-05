@@ -1,18 +1,22 @@
 package com.android.memorama;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.res.Resources;
+import android.media.Image;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.nio.channels.GatheringByteChannel;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by o.lopez.cienfuegos on 10/4/2018.
@@ -30,7 +34,8 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
             -1, -1, -1,
             -1, -1, -1};
 
-    int cardsOpened, card1, card2 = 0;
+    int cardsOpened, card1, card2, totalFound = 0;
+    View view;
 
     public GameRecyclerViewAdapter(){}
 
@@ -90,6 +95,9 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
                             selected[card1] = 1;
                             selected[card2] = 1;
                             card1 = card2 = 0;
+                            if (totalFound == 6){
+                                atGameEnd(view);
+                            }
                         }
                     }
                 }
@@ -136,10 +144,43 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
     private boolean validateMatchingCards(){
         if(currentGame[card1].intValue() == (currentGame[card2].intValue())){
             //cardsOpened = 0;
+            totalFound++;
             return true;
         }else{
             //cardsOpened = 0;
             return false;
+        }
+    }
+
+    public void atGameEnd(View view){
+        final Dialog dialogs = new Dialog(context, R.style.AppTheme);
+        dialogs.setContentView(R.layout.game_completed);
+
+        ImageButton replay = (ImageButton) dialogs.findViewById(R.id.replay);
+        ImageButton back = (ImageButton) dialogs.findViewById(R.id.back);
+
+    replay.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            dialogs.dismiss();
+        }
+    });
+    dialogs.getWindow().getAttributes().windowAnimations = R.style.AppTheme;
+    dialogs.show();
+    }
+
+    public void shuffleArray(Integer[] array) {
+        int index;
+        Random random = new Random();
+        for (int i = array.length - 1; i > 0; i--)
+        {
+            index = random.nextInt(i + 1);
+            if (index != i)
+            {
+                array[index] ^= array[i];
+                array[i] ^= array[index];
+                array[index] ^= array[i];
+            }
         }
     }
 
