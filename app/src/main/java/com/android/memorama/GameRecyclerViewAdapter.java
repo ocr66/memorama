@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.nio.channels.GatheringByteChannel;
 import java.util.List;
@@ -56,34 +57,57 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
         holder.cardView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Toast.makeText(context, "Posicion " + position, Toast.LENGTH_SHORT).show();
                 //Logica del memorama
-                holder.card.setImageResource(currentGame[position]);
+                //"Abre" la tarjeta seleccionada
+                if(selected[position] == -1) {
+                    holder.card.setImageResource(currentGame[position]);
+                    //notifyItemChanged(position);
                 /*try{
                     wait(2000);
                 }catch (Exception e){
 
                 }*/
-                selected[position] = 0;
-                if(verifyTwoCardsSelected(position)){
-                    if(!validateMatchingCards()){
-                        Card card = new Card(R.drawable.card_back);
-                        //Ultima carta seleccionada
-                        holder.card.setImageResource(R.drawable.card_back);
-                        cardList.set(card1, card);
-                        notifyDataSetChanged();
-                        selected[card1] = -1;
-                        selected[card2] = -1;
-                    }else{
-                        selected[card1] = 1;
-                        selected[card2] = 1;
+                    //Array para revisar las tarjetas abiertas, 0 = abierta
+                    //selected[position] = 0;
+                    if (verifyTwoCardsSelected(position)) {
+                        //Toast.makeText(context, "Dos cartas abiertas", Toast.LENGTH_SHORT).show();
+                        //notifyItemChanged(position);
+                        cardsOpened = 0;
+                        if (!validateMatchingCards()) {
+                            //Card card = new Card(R.drawable.card_back);
+                            //Ultima carta seleccionada
+                            //holder.card.setImageResource(R.drawable.card_back);
+                            //cardList.set(card1, card);
+                            //notifyDataSetChanged();
+                            notifyItemChanged(card1);
+                            notifyItemChanged(card2);
+                            selected[card1] = -1;
+                            selected[card2] = -1;
+                            card1 = card2 = 0;
+                        } else {
+                            //Toast.makeText(context, "Encontradas!", Toast.LENGTH_SHORT).show();
+                            selected[card1] = 1;
+                            selected[card2] = 1;
+                            card1 = card2 = 0;
+                        }
                     }
                 }
             }
         });
     }
 
-    private boolean verifyTwoCardsSelected(int position){
+    /*private boolean verifyTwoCardsSelected(int position){
         cardsOpened++;
+        //if(position== 0 ){
+        //    cardsOpened++;
+        //}
+        //if (position == 2 ){
+        //    cardsOpened = 0;
+        //    notifyDataSetChanged();
+        //}
+        notifyDataSetChanged();
+
         if(cardsOpened == 2){
             card2 = position;
             return true;
@@ -92,14 +116,29 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
             return false;
         }
         return false;
+    }*/
+
+    private boolean verifyTwoCardsSelected(int position){
+        cardsOpened++;
+
+        if(cardsOpened == 2){
+            card2 = position;
+            //notifyItemChanged(card1);
+            //notifyItemChanged(card2);
+            return true;
+        }else if(cardsOpened == 1) {
+            card1 = position;
+            return false;
+        }
+        return false;
     }
 
     private boolean validateMatchingCards(){
-        if(currentGame[card1] == currentGame[card2]){
-            cardsOpened = 0;
+        if(currentGame[card1].intValue() == (currentGame[card2].intValue())){
+            //cardsOpened = 0;
             return true;
         }else{
-            cardsOpened = 0;
+            //cardsOpened = 0;
             return false;
         }
     }
