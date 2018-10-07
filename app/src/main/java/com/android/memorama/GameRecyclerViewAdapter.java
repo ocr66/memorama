@@ -1,5 +1,6 @@
 package com.android.memorama;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.res.Resources;
@@ -7,16 +8,26 @@ import android.media.Image;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import java.nio.channels.GatheringByteChannel;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Handler;
+
+import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 
 /**
  * Created by o.lopez.cienfuegos on 10/4/2018.
@@ -24,8 +35,8 @@ import java.util.Random;
 
 public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerViewAdapter.GameViewHolder> {
 
-    List<Card> cardList;
-    private Context context;
+    List<Card> cardList, cardListCopy;
+    Context context;
     Integer [] currentGame, imageCard;
 
     //-1 = hidden, 0 = shown, 1 = found
@@ -35,16 +46,21 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
             -1, -1, -1};
 
     int cardsOpened, card1, card2, totalFound = 0;
-    View view;
+
 
     public GameRecyclerViewAdapter(){}
 
     public GameRecyclerViewAdapter(List<Card> cardList, Integer[] currentGame, Context context){
+        //Las cartas "boca abajo"
         this.cardList = cardList;
+        //El contexto de la actividad
         this.context = context;
+        //Las cartas revueltas
         this.currentGame = currentGame;
 
-        imageCard = new Integer[16];
+        this.cardListCopy = new ArrayList<Card>();
+
+        //imageCard = new Integer[16];
     }
 
     @NonNull
@@ -58,7 +74,7 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
 
     @Override
     public void onBindViewHolder(@NonNull final GameViewHolder holder, final int position) {
-        holder.card.setImageResource(cardList.get(position).imageSource);
+        holder.card.setImageResource(cardList.get(position).getImageSource());
         holder.cardView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -66,37 +82,35 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
                 //Logica del memorama
                 //"Abre" la tarjeta seleccionada
                 if(selected[position] == -1) {
+                    //updateData(position);
                     holder.card.setImageResource(currentGame[position]);
-                    //notifyItemChanged(position);
-                /*try{
-                    wait(2000);
-                }catch (Exception e){
-
-                }*/
-                    //Array para revisar las tarjetas abiertas, 0 = abierta
-                    //selected[position] = 0;
                     if (verifyTwoCardsSelected(position)) {
-                        //Toast.makeText(context, "Dos cartas abiertas", Toast.LENGTH_SHORT).show();
-                        //notifyItemChanged(position);
                         cardsOpened = 0;
                         if (!validateMatchingCards()) {
+                            //undoLastTwoCards();
+
                             //Card card = new Card(R.drawable.card_back);
                             //Ultima carta seleccionada
                             //holder.card.setImageResource(R.drawable.card_back);
-                            //cardList.set(card1, card);
-                            //notifyDataSetChanged();
+
+                            /*try{
+                                Thread.sleep(1500);
+                            }catch (InterruptedException e){
+                                e.printStackTrace();
+                            }*/
                             notifyItemChanged(card1);
                             notifyItemChanged(card2);
                             selected[card1] = -1;
                             selected[card2] = -1;
                             card1 = card2 = 0;
                         } else {
-                            //Toast.makeText(context, "Encontradas!", Toast.LENGTH_SHORT).show();
                             selected[card1] = 1;
                             selected[card2] = 1;
                             card1 = card2 = 0;
+
                             if (totalFound == 6){
-                                atGameEnd(view);
+                                atGameEnd(v);
+
                             }
                         }
                     }
@@ -105,31 +119,40 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
         });
     }
 
-    /*private boolean verifyTwoCardsSelected(int position){
-        cardsOpened++;
-        //if(position== 0 ){
-        //    cardsOpened++;
-        //}
-        //if (position == 2 ){
-        //    cardsOpened = 0;
-        //    notifyDataSetChanged();
-        //}
-        notifyDataSetChanged();
-
-        if(cardsOpened == 2){
-            card2 = position;
-            return true;
-        }else if(cardsOpened == 1){
-            card1 = position;
-            return false;
+    private void updateData(int position){
+        cardListCopy.clear();
+        cardListCopy.addAll(cardList);
+        cardList.clear();
+        for(int i = 0; i < currentGame.length; i++){
+            if(i != position) {
+                cardList.add(cardListCopy.get(i));
+            }else{
+                Card card = new Card(currentGame[i]);
+                cardList.add(card);
+            }
         }
-        return false;
-    }*/
+        notifyDataSetChanged();
+    }
+
+    private void undoLastTwoCards(){
+        cardListCopy.clear();
+        cardListCopy.addAll(cardList);
+        cardList.clear();
+        Card c = new Card(R.drawable.card_back);
+        for(int i = 0; i < currentGame.length; i++){
+            if(i == card1 || i == card2) {
+                cardList.add(c);
+            }else{
+                cardList.add(cardListCopy.get(i));
+            }
+        }
+        notifyDataSetChanged();
+    }
 
     private boolean verifyTwoCardsSelected(int position){
         cardsOpened++;
 
-        if(cardsOpened == 2){
+        if(cardsOpened == 2 && position != card1){
             card2 = position;
             //notifyItemChanged(card1);
             //notifyItemChanged(card2);
@@ -137,8 +160,10 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
         }else if(cardsOpened == 1) {
             card1 = position;
             return false;
+        }else{
+            cardsOpened--;
+            return false;
         }
-        return false;
     }
 
     private boolean validateMatchingCards(){
@@ -152,22 +177,52 @@ public class GameRecyclerViewAdapter extends RecyclerView.Adapter<GameRecyclerVi
         }
     }
 
-    public void atGameEnd(View view){
-        final Dialog dialogs = new Dialog(context, R.style.AppTheme);
+    public void atGameEnd(View v){
+        /*final Dialog dialogs = new Dialog(context, R.style.AppTheme);
         dialogs.setContentView(R.layout.game_completed);
-
+        dialogs.getWindow().getAttributes().windowAnimations = R.style.AppTheme;
         ImageButton replay = (ImageButton) dialogs.findViewById(R.id.replay);
         ImageButton back = (ImageButton) dialogs.findViewById(R.id.back);
 
-    replay.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            dialogs.dismiss();
-        }
-    });
-    dialogs.getWindow().getAttributes().windowAnimations = R.style.AppTheme;
-    dialogs.show();
+        replay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialogs.dismiss();
+            }
+        });
+        dialogs.show();*/
+
+        LayoutInflater inflater = (LayoutInflater)v.getContext().
+                getSystemService(LAYOUT_INFLATER_SERVICE);
+        final View popupView = inflater.inflate(R.layout.game_completed, null);
+        int width = RelativeLayout.LayoutParams.MATCH_PARENT;
+        int height = RelativeLayout.LayoutParams.MATCH_PARENT;
+        boolean focusable = true;
+        final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+        popupWindow.showAtLocation(v, Gravity.CENTER, 0, 0);
+        ImageButton replay = (ImageButton) popupView.findViewById(R.id.replay);
+        ImageButton back = (ImageButton)popupView.findViewById(R.id.back);
+        replay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                shuffleArray(currentGame);
+                notifyDataSetChanged();
+                for(int i = 0; i < selected.length; i++) {
+                    selected[i] = -1;
+                }
+                popupWindow.dismiss();
+                totalFound = 0;
+            }
+        });
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ((Activity)context).finish();
+            }
+        });
     }
+
+
 
     public void shuffleArray(Integer[] array) {
         int index;

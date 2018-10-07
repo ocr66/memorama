@@ -45,7 +45,7 @@ public class Game extends AppCompatActivity {
 
         agregarCartas(gameTopic);
 
-        GameRecyclerViewAdapter gAdapter = new GameRecyclerViewAdapter(cardList, currentGame, getApplicationContext());
+        GameRecyclerViewAdapter gAdapter = new GameRecyclerViewAdapter(cardList, currentGame, this);
         recyclerView.setAdapter(gAdapter);
 
     }
